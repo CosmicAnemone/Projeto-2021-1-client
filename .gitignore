@@ -1,0 +1,6 @@
+# Let's just share the code, no need to bother with the rest.
+*.meta
+/*
+!/[Aa]ssets/
+/[Aa]ssets/*
+!/[Aa]ssets/[Ss]cripts/

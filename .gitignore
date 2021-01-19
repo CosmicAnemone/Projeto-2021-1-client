@@ -1,6 +1,7 @@
 # Let's just share the code, no need to bother with the rest.
 *.meta
 /*
+!README.md
 !/[Aa]ssets/
 /[Aa]ssets/*
 !/[Aa]ssets/[Ss]cripts/

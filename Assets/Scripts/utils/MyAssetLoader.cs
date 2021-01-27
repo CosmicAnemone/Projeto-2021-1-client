@@ -2,7 +2,7 @@
 
 public class MyAssetLoader<T> where T : Object
 {
-	public string assetPath;
+	private readonly string assetPath;
 	private T asset;
 	public T Asset {
 		get {

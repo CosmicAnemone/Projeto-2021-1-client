@@ -21,12 +21,10 @@ namespace ui {
 
         private void Awake() {
             isOn = false;
-            button.onClick.AddListener(toggle);
-        }
-
-        public void toggle() {
-            isOn = !isOn;
-            onToggle?.Invoke(isOn);
+            button.onClick.AddListener(() => {
+                isOn = !isOn;
+                onToggle?.Invoke(isOn);
+            });
         }
 
         public Toggle setText(string newText) {

@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using static UnityEngine.UI.InputField;
 
 namespace data {
     public class Choices {
         public Empresa empresa;
-        public long CPF;
-        public Action action;
+        public Funcionario funcionario;
+        public Action action = Action.none;
         public readonly HashSet<Beneficio> beneficios = new HashSet<Beneficio>();
-        public readonly Dictionary<string, ContentType> campos = new Dictionary<string, ContentType>();
 
         public string actionVerb {
             get {
@@ -19,6 +17,21 @@ namespace data {
                         return "modificar";
                     case Action.remove:
                         return "descadastrar";
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        public string actionType {
+            get {
+                switch (action) {
+                    case Action.add:
+                        return "add";
+                    case Action.edit:
+                        return "edit";
+                    case Action.remove:
+                        return "remove";
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

@@ -119,6 +119,15 @@
             }
 		}
 
+		public bool tryFetch(string pos, out JSONNode resp) {
+			resp = this[pos];
+			return resp != null;
+		}
+		public bool tryFetch(int pos, out JSONNode resp) {
+			resp = this[pos];
+			return resp != null;
+		}
+
         public bool tryFetch<T>(string pos, System.Converter<JSONNode, T> converter, out T resp) {
             resp = converter(this[pos]);
             return resp != null;

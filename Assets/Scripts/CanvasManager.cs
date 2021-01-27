@@ -1,6 +1,6 @@
 ﻿// Para builds focando numa empresa específica,
 // descomente a diretiva em questão e comente a diretiva de 'empresa indeterminada'.
-//
+
 // #define ACME_CO
 // #define TIO_PATINHAS_BANK
 
@@ -8,8 +8,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ComponentModel;
 using data;
+using network;
+using SimpleJSON;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -27,27 +29,38 @@ public class CanvasManager : MonoBehaviour {
     private readonly Choices choices = new Choices();
 
     private void Start() {
-        Debug.Log(long.TryParse("12822305730", out choices.CPF));
 #if ACME_CO
-        choices.empresa = PlaceholderData.acmeCo;
+        NetworkingManager.loadEmpresa(choices,
+                                      PlaceholderData.acmeCo,
+                                      s => mensagem(s, escolherEmpresa));
         escolherCPF();
 #elif TIO_PATINHAS_BANK
-        choices.empresa = PlaceholderData.tioPatinhasBank;
+        NetworkingManager.loadEmpresa(choices,
+                                      PlaceholderData.tioPatinhasBank,
+                                      s => mensagem(s, escolherEmpresa));
         escolherCPF();
 #else
         escolherEmpresa();
 #endif
     }
 
+    private void nextAction() {
+        choices.action = Choices.Action.none;
+        choices.beneficios.Clear();
+        escolherAcao();
+    }
+
 #if EMPRESA_INDETERMINADA
     private void escolherEmpresa() {
-        foreach (Empresa empresa in PlaceholderData.empresas) {
+        foreach (string nomeEmpresa in PlaceholderData.nomeEmpresas) {
             createUI(basic_button)
-                .setText(empresa.nome)
+                .setText(nomeEmpresa)
                 .setOnClick(() => {
                     clearUI();
-                    choices.empresa = empresa;
-                    escolherCPF();
+                    if (NetworkingManager.loadEmpresa(
+                        choices, nomeEmpresa, s => mensagem(s, escolherEmpresa))) {
+                        escolherCPF();
+                    }
                 });
         }
     }
@@ -67,14 +80,15 @@ public class CanvasManager : MonoBehaviour {
                 string input = inputField.text;
                 if (input.Length != 11) {
                     mensagem("O CPF deve conter 11 caracteres.", escolherCPF);
-                } else if (!long.TryParse(input, out choices.CPF)) {
-                    Debug.Log(input);
+                } else if (!long.TryParse(input, out long CPF)) {
                     mensagem("CPF deve ser um número.", escolherCPF);
-                } else {
+                } else if (NetworkingManager.loadFuncionario(
+                    choices, CPF, s => mensagem(s, escolherCPF))) {
                     escolherAcao();
                 }
             });
 
+#if EMPRESA_INDETERMINADA
         createUI(basic_button)
             .setText("Voltar")
             .setOnClick(() => {
@@ -82,10 +96,11 @@ public class CanvasManager : MonoBehaviour {
                 choices.empresa = null;
                 escolherEmpresa();
             });
+#endif
     }
 
     private void escolherAcao() {
-        createUI(basic_label).setText("O que eseja fazer?");
+        createUI(basic_label).setText("O que deseja fazer?");
         createUI(basic_button)
             .setText("Adicionar benefício(s)")
             .setOnClick(() => {
@@ -108,17 +123,36 @@ public class CanvasManager : MonoBehaviour {
                 escolherBeneficios();
             });
         createUI(basic_button)
-            .setText("Voltar")
+            .setText("Selecionar outro funcionário")
             .setOnClick(() => {
                 clearUI();
-                choices.CPF = 0;
+                choices.funcionario = null;
                 escolherCPF();
             });
     }
 
     private void escolherBeneficios() {
+        choices.beneficios.Clear();
         createUI(basic_label).setText($"Qual benefício deseja {choices.actionVerb}?");
+        List<Beneficio> beneficios = new List<Beneficio>();
         foreach (Beneficio beneficio in choices.empresa.beneficios) {
+            switch (choices.action) {
+                case Choices.Action.add:
+                    if (!choices.funcionario.beneficios.Contains(beneficio.nome)) {
+                        beneficios.Add(beneficio);
+                    }
+                    break;
+                case Choices.Action.edit:
+                case Choices.Action.remove:
+                    if (choices.funcionario.beneficios.Contains(beneficio.nome)) {
+                        beneficios.Add(beneficio);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        foreach (Beneficio beneficio in beneficios) {
             createUI(basic_toggle)
                 .setText(beneficio.nome)
                 .setOnToggle(isOn => {
@@ -139,11 +173,10 @@ public class CanvasManager : MonoBehaviour {
                         preencherCampos();
                         break;
                     case Choices.Action.remove:
-                        mensagem(choices.beneficios.Aggregate(
-                                     "Beneficios descadastrados:\n",
-                                     (current, beneficio) => current + $"\n\t- {beneficio.nome}"),
-                                 escolherBeneficios);
-                        choices.beneficios.Clear();
+                        if (NetworkingManager.modificarCadastros(choices,
+                                                                s => mensagem(s, escolherBeneficios))) {
+                            mensagem("Beneficios removidos com sucesso!", nextAction);
+                        }
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -159,29 +192,41 @@ public class CanvasManager : MonoBehaviour {
     }
 
     private void preencherCampos() {
+        choices.funcionario.novosCampos = new JSONObject();
+        Dictionary<string, InputField.ContentType> campos = new Dictionary<string, InputField.ContentType>();
         foreach (Beneficio beneficio in choices.beneficios) {
             foreach (KeyValuePair<string, InputField.ContentType> pair in beneficio.campos) {
-                if (!choices.campos.ContainsKey(pair.Key)) {
-                    choices.campos.Add(pair.Key, pair.Value);
-                }
+                campos[pair.Key] = pair.Value;
             }
         }
-        Dictionary<string, InputField> inputFields = new Dictionary<string, InputField>();
-        foreach (KeyValuePair<string,InputField.ContentType> pair in choices.campos) {
+        foreach (KeyValuePair<string, InputField.ContentType> pair in campos) {
             createUI(basic_label).setText(pair.Key);
             InputField inputField = createUI(basic_input_field);
             inputField.contentType = pair.Value;
-            inputFields.Add(pair.Key, inputField);
+            inputField.onEndEdit.AddListener(input => {
+                switch (pair.Value) {
+                    case InputField.ContentType.Alphanumeric:
+                        choices.funcionario.novosCampos[pair.Key] = input;
+                        break;
+                    case InputField.ContentType.IntegerNumber:
+                        choices.funcionario.novosCampos[pair.Key] = int.Parse(input);
+                        break;
+                    case InputField.ContentType.DecimalNumber:
+                        choices.funcionario.novosCampos[pair.Key] = double.Parse(input);
+                        break;
+                    default:
+                        throw new InvalidEnumArgumentException();
+                }
+            });
         }
         createUI(basic_button)
             .setText("Confirmar")
             .setOnClick(() => {
                 clearUI();
-                mensagem(inputFields.Aggregate(
-                             $"Campos {choices.resultVerb}os:\n",
-                             (current, pair)=>
-                                 $"{current}\n{pair.Key} -> {pair.Value.text}"),
-                         preencherCampos);
+                if (NetworkingManager.modificarCadastros(choices,
+                                                        s => mensagem(s, preencherCampos))) {
+                    mensagem($"Beneficios {choices.resultVerb}os com sucesso!", nextAction);
+                }
             });
         createUI(basic_button)
             .setText("Voltar")
@@ -192,10 +237,10 @@ public class CanvasManager : MonoBehaviour {
             });
     }
 
-    private void mensagem(string mensagem, UnityAction returnTo) {
+    private void mensagem(string mensagem, UnityAction returnTo, string voltar = "Voltar") {
         createUI(basic_label).flexible.setText(mensagem);
         createUI(basic_button)
-            .setText("Voltar")
+            .setText(voltar)
             .setOnClick(() => {
                 clearUI();
                 returnTo.Invoke();

@@ -30,19 +30,7 @@ public class CanvasManager : MonoBehaviour {
     private readonly Choices choices = new Choices();
 
     private void Start() {
-#if ACME_CO
-        NetworkingManager.loadEmpresa(choices,
-                                      PlaceholderData.acmeCo,
-                                      s => mensagem(s, escolherEmpresa));
-        escolherCPF();
-#elif TIO_PATINHAS_BANK
-        NetworkingManager.loadEmpresa(choices,
-                                      PlaceholderData.tioPatinhasBank,
-                                      s => mensagem(s, escolherEmpresa));
-        escolherCPF();
-#else
-        escolherEmpresa();
-#endif
+        escolherPorta();
     }
 
     private void nextAction() {
@@ -51,8 +39,39 @@ public class CanvasManager : MonoBehaviour {
         escolherAcao();
     }
 
-#if EMPRESA_INDETERMINADA
+    private void escolherPorta() {
+        (TextLabel textLabel, InputField inputField) = createUI(basic_label, basic_input_field);
+        textLabel.setText("Porta a ser usada na conexão com o servidor");
+        inputField.contentType = InputField.ContentType.IntegerNumber;
+        inputField.characterLimit = 5;
+        
+        createUI(basic_button)
+            .setText("Confirmar")
+            .setOnClick(() => {
+                clearUI();
+                string input = inputField.text;
+                if (!int.TryParse(input, out Defs.PORT)) {
+                    mensagem("A porta deve ser um número.", escolherPorta);
+                } else {
+                    escolherEmpresa();
+                }
+            });
+    }
+
     private void escolherEmpresa() {
+#if ACME_CO
+        NetworkingManager.loadEmpresa(choices,
+                                      PlaceholderData.acmeCo,
+                                      s => mensagem(s, escolherEmpresa));
+        escolherCPF();
+        return;
+#elif TIO_PATINHAS_BANK
+        NetworkingManager.loadEmpresa(choices,
+                                      PlaceholderData.tioPatinhasBank,
+                                      s => mensagem(s, escolherEmpresa));
+        escolherCPF();
+        return;
+#else
         foreach (string nomeEmpresa in PlaceholderData.nomeEmpresas) {
             createUI(basic_button)
                 .setText(nomeEmpresa)
@@ -64,8 +83,8 @@ public class CanvasManager : MonoBehaviour {
                     }
                 });
         }
-    }
 #endif
+    }
 
     private void escolherCPF() {
         (TextLabel textLabel, InputField inputField) = createUI(basic_label, basic_input_field);

@@ -11,8 +11,8 @@ namespace network {
             return tryTask(client.GetAsync(URL));
         }
 
-        public static JSONNode tryPost(string URL, string content) {
-            return tryTask(client.PostAsync(URL, new StringContent(content)));
+        public static JSONNode tryPost(string URL, JSONObject content) {
+            return tryTask(client.PostAsync(URL, new StringContent(content.ToString())));
         }
 
         private static JSONNode tryTask(Task<HttpResponseMessage> task) {

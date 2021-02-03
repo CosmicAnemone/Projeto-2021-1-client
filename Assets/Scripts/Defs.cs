@@ -5,5 +5,6 @@ public static class Defs {
     // Normalmente usaríamos uma porta fixa, mas para permitir testes alheios,
     // será permitido ao cliente escolher a porta, nesse protótipo.
     public static int PORT;
-    public static readonly string base_url = $"http://localhost:{PORT}/registro";
+    public static string get_url => $"http://localhost:{PORT}/info";
+    public static string post_url => $"http://localhost:{PORT}/registro";
 }

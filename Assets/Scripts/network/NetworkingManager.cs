@@ -7,7 +7,7 @@ namespace network {
     public static class NetworkingManager {
         public static bool loadEmpresa(Choices choices, string nomeEmpresa, Action<string> onError) {
             JSONObject json = NetworkingClient.tryGet(
-                $"{Defs.base_url}?empresa={Uri.EscapeDataString(nomeEmpresa)}&type=info_empresa"
+                $"{Defs.get_url}?empresa={Uri.EscapeDataString(nomeEmpresa)}&type=info_empresa"
             )?.AsObject;
             if (json == null) {
                 onError("Erro ao carregar dados");
@@ -20,7 +20,7 @@ namespace network {
                     Beneficio beneficio = new Beneficio(pair.Key);
                     if (pair.Value is JSONObject camposJson) {
                         foreach (KeyValuePair<string, JSONNode> campo in camposJson) {
-                            if (!pair.Value.IsString ||
+                            if (!campo.Value.IsString ||
                                 beneficio.setCampo(campo.Key, campo.Value.Value) == null) {
                                 onError("Json inválido");
                                 return false;
@@ -39,9 +39,8 @@ namespace network {
 
         public static bool loadFuncionario(Choices choices, long CPF, Action<string> onError) {
             JSONObject json = NetworkingClient.tryPost(
-                Defs.base_url,
+                $"{Defs.post_url}?type=info_funcionario",
                 new JSONObject {
-                    [Field.type] = "info_funcionario",
                     [Field.empresa] = choices.empresa.nome,
                     [Field.funcionario] = CPF
                 }
@@ -85,7 +84,6 @@ namespace network {
 
         private static bool modificarCadastro(Choices choices, Beneficio beneficio) {
             JSONObject requestJson = new JSONObject {
-                [Field.type] = choices.actionType,
                 [Field.empresa] = choices.empresa.nome,
                 [Field.funcionario] = choices.funcionario.CPF,
                 [Field.beneficio] = beneficio.nome
@@ -99,7 +97,9 @@ namespace network {
                 }
                 requestJson[Field.campos] = campos;
             }
-            JSONObject json = NetworkingClient.tryPost(Defs.base_url, requestJson)?.AsObject;
+            JSONObject json = NetworkingClient.tryPost(
+                $"{Defs.post_url}?type={choices.actionType}", requestJson
+            )?.AsObject;
             return json != null && !isError(json);
         }
 

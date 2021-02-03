@@ -44,7 +44,7 @@ public class CanvasManager : MonoBehaviour {
         textLabel.setText("Porta a ser usada na conexão com o servidor");
         inputField.contentType = InputField.ContentType.IntegerNumber;
         inputField.characterLimit = 5;
-        
+
         createUI(basic_button)
             .setText("Confirmar")
             .setOnClick(() => {
@@ -192,8 +192,8 @@ public class CanvasManager : MonoBehaviour {
                         preencherCampos();
                         break;
                     case Choices.Action.remove:
-                        if (NetworkingManager.modificarCadastros(choices,
-                                                                s => mensagem(s, escolherBeneficios))) {
+                        if (NetworkingManager.modificarCadastros(
+                                choices, s => mensagem(s, escolherBeneficios))) {
                             mensagem("Beneficios removidos com sucesso!", nextAction);
                         }
                         break;
@@ -228,10 +228,18 @@ public class CanvasManager : MonoBehaviour {
                         choices.funcionario.novosCampos[pair.Key] = input;
                         break;
                     case InputField.ContentType.IntegerNumber:
-                        choices.funcionario.novosCampos[pair.Key] = int.Parse(input);
+                        try {
+                            choices.funcionario.novosCampos[pair.Key] = int.Parse(input);
+                        } catch (ArithmeticException) {
+                            inputField.text = "";
+                        }
                         break;
                     case InputField.ContentType.DecimalNumber:
-                        choices.funcionario.novosCampos[pair.Key] = double.Parse(input);
+                        try {
+                            choices.funcionario.novosCampos[pair.Key] = double.Parse(input);
+                        } catch (ArithmeticException) {
+                            inputField.text = "";
+                        }
                         break;
                     default:
                         throw new InvalidEnumArgumentException();
@@ -242,8 +250,8 @@ public class CanvasManager : MonoBehaviour {
             .setText("Confirmar")
             .setOnClick(() => {
                 clearUI();
-                if (NetworkingManager.modificarCadastros(choices,
-                                                        s => mensagem(s, preencherCampos))) {
+                if (NetworkingManager.modificarCadastros(
+                        choices, s => mensagem(s, preencherCampos))) {
                     mensagem($"Beneficios {choices.resultVerb}os com sucesso!", nextAction);
                 }
             });

@@ -12,6 +12,7 @@ using System.ComponentModel;
 using data;
 using network;
 using SimpleJSON;
+using ui;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -67,9 +68,8 @@ public class CanvasManager : MonoBehaviour {
 #endif
 
     private void escolherCPF() {
-        createUI(basic_label).setText("CPF do funcionário");
-
-        InputField inputField = createUI(basic_input_field);
+        (TextLabel textLabel, InputField inputField) = createUI(basic_label, basic_input_field);
+        textLabel.setText("CPF do funcionário");
         inputField.contentType = InputField.ContentType.IntegerNumber;
         inputField.characterLimit = 11;
 
@@ -200,8 +200,8 @@ public class CanvasManager : MonoBehaviour {
             }
         }
         foreach (KeyValuePair<string, InputField.ContentType> pair in campos) {
-            createUI(basic_label).setText(pair.Key);
-            InputField inputField = createUI(basic_input_field);
+            (TextLabel textLabel, InputField inputField) = createUI(basic_label, basic_input_field);
+            textLabel.setText(pair.Key);
             inputField.contentType = pair.Value;
             inputField.onEndEdit.AddListener(input => {
                 switch (pair.Value) {
@@ -249,6 +249,14 @@ public class CanvasManager : MonoBehaviour {
 
     private T createUI<T>(MyAssetLoader<T> asset) where T : MonoBehaviour {
         return registerUI(Instantiate(asset.Asset, verticalLayout));
+    }
+
+    private (T1, T2) createUI<T1, T2>(MyAssetLoader<T1> left, MyAssetLoader<T2> right)
+        where T1 : MonoBehaviour
+        where T2 : MonoBehaviour {
+        HorizontalLayoutGroup layout = createUI(horizontal_layout);
+        return (Instantiate(left.Asset, layout.transform),
+                Instantiate(right.Asset, layout.transform));
     }
 
     private T registerUI<T>(T targetUI) where T : MonoBehaviour {

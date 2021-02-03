@@ -11,4 +11,6 @@ public static class Assets {
         new MyAssetLoader<TextLabel>("basic label");
     public static readonly MyAssetLoader<InputField> basic_input_field =
         new MyAssetLoader<InputField>("basic input field");
+    public static readonly MyAssetLoader<HorizontalLayoutGroup> horizontal_layout =
+        new MyAssetLoader<HorizontalLayoutGroup>("horizontal layout");
 }

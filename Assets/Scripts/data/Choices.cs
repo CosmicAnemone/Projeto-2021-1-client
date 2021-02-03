@@ -8,21 +8,6 @@ namespace data {
         public Action action = Action.none;
         public readonly HashSet<Beneficio> beneficios = new HashSet<Beneficio>();
 
-        public string actionVerb {
-            get {
-                switch (action) {
-                    case Action.add:
-                        return "cadastrar";
-                    case Action.edit:
-                        return "modificar";
-                    case Action.remove:
-                        return "descadastrar";
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
-
         public string actionType {
             get {
                 switch (action) {
@@ -37,16 +22,31 @@ namespace data {
                 }
             }
         }
-        
-        public string resultVerb {
+
+        public string acaoInfinitivo => $"{verboParcial}r";
+        public string acao {
             get {
                 switch (action) {
                     case Action.add:
-                        return "cadastrad";
+                        return "cadastro";
                     case Action.edit:
-                        return "modificad";
+                        return "modificação";
                     case Action.remove:
-                        return "descadastrad";
+                        return "descadastro";
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+        public string verboParcial {
+            get {
+                switch (action) {
+                    case Action.add:
+                        return "cadastra";
+                    case Action.edit:
+                        return "modifica";
+                    case Action.remove:
+                        return "descadastra";
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

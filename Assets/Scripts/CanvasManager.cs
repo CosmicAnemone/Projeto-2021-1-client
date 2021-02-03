@@ -77,8 +77,10 @@ public class CanvasManager : MonoBehaviour {
                 .setText(nomeEmpresa)
                 .setOnClick(() => {
                     clearUI();
+                    loading("Carregando informações da empresa...");
                     if (NetworkingManager.loadEmpresa(
-                        choices, nomeEmpresa, s => mensagem(s, escolherEmpresa))) {
+                        choices, nomeEmpresa, s => mensagem(s, escolherEmpresa, doClearUI: true))) {
+                        clearUI();
                         escolherCPF();
                     }
                 });
@@ -101,9 +103,13 @@ public class CanvasManager : MonoBehaviour {
                     mensagem("O CPF deve conter 11 caracteres.", escolherCPF);
                 } else if (!long.TryParse(input, out long CPF)) {
                     mensagem("CPF deve ser um número.", escolherCPF);
-                } else if (NetworkingManager.loadFuncionario(
-                    choices, CPF, s => mensagem(s, escolherCPF))) {
-                    escolherAcao();
+                } else {
+                    loading("Carregando informações do funcionário...");
+                    if (NetworkingManager.loadFuncionario(
+                        choices, CPF, s => mensagem(s, escolherCPF, doClearUI: true))) {
+                        clearUI();
+                        escolherAcao();
+                    }
                 }
             });
 
@@ -152,7 +158,7 @@ public class CanvasManager : MonoBehaviour {
 
     private void escolherBeneficios() {
         choices.beneficios.Clear();
-        createUI(basic_label).setText($"Qual benefício deseja {choices.actionVerb}?");
+        createUI(basic_label).setText($"Qual benefício deseja {choices.acaoInfinitivo}?");
         List<Beneficio> beneficios = new List<Beneficio>();
         foreach (Beneficio beneficio in choices.empresa.beneficios) {
             switch (choices.action) {
@@ -192,9 +198,11 @@ public class CanvasManager : MonoBehaviour {
                         preencherCampos();
                         break;
                     case Choices.Action.remove:
+                        loading("Solicitando descadastro de benefícios...");
                         if (NetworkingManager.modificarCadastros(
-                                choices, s => mensagem(s, escolherBeneficios))) {
-                            mensagem("Beneficios removidos com sucesso!", nextAction);
+                            choices, s => mensagem(s, escolherBeneficios, doClearUI: true))) {
+                            clearUI();
+                            mensagem("Beneficios descadastrados com sucesso!", nextAction);
                         }
                         break;
                     default:
@@ -250,9 +258,11 @@ public class CanvasManager : MonoBehaviour {
             .setText("Confirmar")
             .setOnClick(() => {
                 clearUI();
+                loading($"Solicitando {choices.acao} de benefícios...");
                 if (NetworkingManager.modificarCadastros(
-                        choices, s => mensagem(s, preencherCampos))) {
-                    mensagem($"Beneficios {choices.resultVerb}os com sucesso!", nextAction);
+                    choices, s => mensagem(s, preencherCampos, doClearUI: true))) {
+                    clearUI();
+                    mensagem($"Beneficios {choices.verboParcial}os com sucesso!", nextAction);
                 }
             });
         createUI(basic_button)
@@ -264,7 +274,13 @@ public class CanvasManager : MonoBehaviour {
             });
     }
 
-    private void mensagem(string mensagem, UnityAction returnTo, string voltar = "Voltar") {
+    private void loading(string mensagem = "Carregando...") {
+        createUI(basic_label).flexible.setText(mensagem);
+    }
+
+    private void mensagem(string mensagem, UnityAction returnTo,
+                          string voltar = "Voltar", bool doClearUI = false) {
+        if (doClearUI) clearUI();
         createUI(basic_label).flexible.setText(mensagem);
         createUI(basic_button)
             .setText(voltar)

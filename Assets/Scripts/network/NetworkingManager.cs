@@ -7,7 +7,8 @@ namespace network {
     public static class NetworkingManager {
         public static bool loadEmpresa(Choices choices, string nomeEmpresa, Action<string> onError) {
             JSONObject json = NetworkingClient.tryGet(
-                Defs.base_url + "?empresa=" + Uri.EscapeDataString(nomeEmpresa))?.AsObject;
+                $"{Defs.base_url}?empresa={Uri.EscapeDataString(nomeEmpresa)}&type=info_empresa"
+            )?.AsObject;
             if (json == null) {
                 onError("Erro ao carregar dados");
                 return false;
@@ -109,8 +110,8 @@ namespace network {
 
             string errorMessage = null;
             onError?.Invoke(node.tryFetch(Field.data, ref errorMessage)
-                        ? $"Erro:\n{errorMessage}"
-                        : "Erro desconhecido");
+                                ? $"Erro:\n{errorMessage}"
+                                : "Erro desconhecido");
 
             return true;
         }
